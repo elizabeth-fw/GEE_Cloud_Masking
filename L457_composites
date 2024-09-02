@@ -1,0 +1,66 @@
+// #################################### AOI ####################################
+
+var aotea = ee.FeatureCollection('projects/aotealandslides/assets/aotea');
+
+Map.addLayer(aotea, {color: 'red'}, 'aotea');
+
+Map.centerObject(aotea, 11);
+
+
+// #################################### SCALING FACTORS ####################################
+
+// ------------------------ Landsat 4-7 scaling -------------------------
+
+function applyL47ScaleFactors(image) {
+  var opticalBands = image.select('SR_B.').multiply(0.0000275).add(-0.2);
+  return image.addBands(opticalBands, null, true);
+}
+
+
+// #################################### MASKING ####################################
+
+// ------------------------- cloudmasking Landsat 4-7 -------------------------
+
+function maskL47clouds(image) {
+  var cloudShadowBitMask = (1 << 3);
+  var cloudsBitMask = (1 << 5);
+  var qa = image.select('QA_PIXEL');
+  var mask = qa.bitwiseAnd(cloudShadowBitMask).eq(0)
+              .and(qa.bitwiseAnd(cloudsBitMask).eq(0));
+  return image.updateMask(mask);
+}
+
+
+// #################################### VISUALIZATIONS ####################################
+
+// ------------------------ Landsat 4-7 visualization-------------------------
+
+var L47_vis = {
+  bands: ['SR_B3', 'SR_B2', 'SR_B1'],
+  min: 0.0,
+  max: 0.3,
+};
+
+
+// #################################### IMAGE COLLECTION & COMPOSING ####################################
+
+// ------------------------- LANDSAT 4-7 COMPOSITE -------------------------
+
+for (var year = 1982; year <= 2023; year++) {
+  var start = year + '-10-01';
+  var end = (year + 1) + '-01-31';  // Include October to January of the following year
+
+  var L47 = ee.ImageCollection('LANDSAT/LT04/C02/T1_L2')
+                .merge(ee.ImageCollection('LANDSAT/LT05/C02/T1_L2'))
+                .merge(ee.ImageCollection('LANDSAT/LE07/C02/T1_L2'))
+                .filterDate(start, end)
+                .filterBounds(aotea)
+                .filterMetadata('CLOUD_COVER', 'less_than', 50)
+                .map(applyL47ScaleFactors)
+                .map(maskL47clouds)
+                .median()
+                .clip(aotea);
+
+  // Add the composite to the map
+  Map.addLayer(L47, L47_vis, 'L47_' + year);
+}
