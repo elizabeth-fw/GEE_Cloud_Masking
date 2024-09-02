@@ -1,0 +1,63 @@
+// #################################### AOI ####################################
+
+var aotea = ee.FeatureCollection('projects/aotealandslides/assets/aotea');
+
+Map.addLayer(aotea, {color: 'red'}, 'aotea');
+
+Map.centerObject(aotea, 11);
+
+
+// #################################### SCALING FACTORS ####################################
+
+// ------------------------ Landsat 1-3 scaling -------------------------
+
+function applyL123ScaleFactors(image) {
+  var opticalBands = image.select('B.').multiply(0.0000275).add(-0.2);
+  return image.addBands(opticalBands, null, true);
+}
+
+
+// #################################### MASKING ####################################
+
+// ------------------------- cloudmasking Landsat 1-3 -------------------------
+
+function maskL123clouds(image) {
+  var qa = image.select('QA_PIXEL');
+  var mask = qa.eq(1);
+  return image.updateMask(mask);
+}
+
+
+// #################################### VISUALIZATIONS ####################################
+
+// ------------------------ Landsat 1-3 visualization-------------------------
+
+var L123_vis = {
+  bands: ['B4', 'B3', 'B2'],
+  min: 0.0,
+  max: 0.3,
+};
+
+
+// #################################### IMAGE COLLECTION & COMPOSING ####################################
+
+// ------------------------- LANDSAT 1-3 COMPOSITE -------------------------
+
+for (var year = 1972; year <= 1982; year++) {
+  var start = year + '-10-01';
+  var end = (year + 1) + '-01-31';  // Include October to January of the following year
+
+  var L123 = ee.ImageCollection('LANDSAT/LM01/C02/T1')
+                .merge(ee.ImageCollection('LANDSAT/LM02/C02/T1'))
+                .merge(ee.ImageCollection('LANDSAT/LM03/C02/T1'))
+                .filterDate(start, end)
+                .filterBounds(aotea)
+                .filterMetadata('CLOUD_COVER', 'less_than', 50)
+                .map(applyL123ScaleFactors)
+                .map(maskL123clouds)
+                .median()
+                .clip(aotea);
+
+  // Add the composite to the map
+  Map.addLayer(L123, L123_vis, 'L123_' + year);
+}
