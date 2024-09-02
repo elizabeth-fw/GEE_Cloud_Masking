@@ -1,0 +1,58 @@
+// #################################### AOI ####################################
+
+var aotea = ee.FeatureCollection('projects/aotealandslides/assets/aotea');
+
+Map.addLayer(aotea, {color: 'red'}, 'aotea');
+
+Map.centerObject(aotea, 11);
+
+
+// #################################### SCALING FACTORS ####################################
+
+// No scaling factors needed for Landsat 8 & 9 as they are already scaled properly in SR data
+
+
+// #################################### MASKING ####################################
+
+// ------------------------- cloudmasking Landsat 8 & 9 -------------------------
+
+function maskL89clouds(image) {
+  var qa = image.select('QA_PIXEL');
+  var cloudBitMask = 1 << 3;
+  var cirrusBitMask = 1 << 2;
+  var mask = qa.bitwiseAnd(cloudBitMask).eq(0).and(qa.bitwiseAnd(cirrusBitMask).eq(0));
+  return image.updateMask(mask);
+}
+
+
+// #################################### VISUALIZATIONS ####################################
+
+// ------------------------ Landsat 8 & 9 visualization with 70th percentile bands -------------------------
+
+var L89_vis = {
+  bands: ['SR_B4_p70', 'SR_B3_p70', 'SR_B2_p70'],  // Use the 70th percentile bands
+  min: 2000,   // Adjusted based on previous analysis
+  max: 25000,  // Adjusted to highlight bright features like bare soil
+};
+
+
+// #################################### IMAGE COLLECTION & COMPOSING ####################################
+
+// ------------------------- LANDSAT 8 & 9 COMPOSITE -------------------------
+
+for (var year = 2013; year <= 2023; year++) {
+  var start = year + '-10-01';
+  var end = (year + 1) + '-01-31';  // Include October to January of the following year
+
+  var L89 = ee.ImageCollection('LANDSAT/LC08/C02/T1_L2')
+                .merge(ee.ImageCollection('LANDSAT/LC09/C02/T1_L2'))
+                .filterDate(start, end)
+                .filterBounds(aotea)
+                .filterMetadata('CLOUD_COVER', 'less_than', 50)
+                .map(maskL89clouds)
+                .reduce(ee.Reducer.percentile([70])) // Take the 70th percentile
+                .clip(aotea);
+
+  // Add the composite to the map
+  Map.addLayer(L89, L89_vis, 'L89_' + year);
+}
