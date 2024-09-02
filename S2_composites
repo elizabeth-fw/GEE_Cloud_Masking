@@ -1,0 +1,49 @@
+// #################################### AOI ####################################
+
+var aotea = ee.FeatureCollection('projects/aotealandslides/assets/aotea');
+
+Map.addLayer (aotea, {color: 'red'}, 'aotea');
+
+Map.centerObject(aotea, 11);
+
+// #################################### MASKING ####################################
+
+// ------------------------- cloudmasking Sentinel 2 -------------------------
+
+function maskS2clouds(image) {
+  var qa = image.select('QA60');
+// Bits 10 and 11 are clouds and cirrus, respectively
+  var cloudBitMask = 1 << 10;
+  var cirrusBitMask = 1 << 11;
+// Both flags should be set to zero, indicating clear conditions
+  var mask = qa.bitwiseAnd(cloudBitMask).eq(0)
+              .and(qa.bitwiseAnd(cirrusBitMask).eq(0));
+  return image.updateMask(mask).divide(10000);
+}
+
+// #################################### VISUALIZATIONS ####################################
+
+// ------------------------- Sentinel 2 visualization -------------------------
+
+var S2_vis = {
+  min: 0.0,
+  max: 0.3,
+  bands: ['B4', 'B3', 'B2']
+}
+
+// #################################### IMAGE COLLECTION & COMPOSTING ####################################
+
+// ------------------------- SENTINEL 2 -------------------------
+
+for (var year = 2017; year <= 2023; year++) {
+  var S2 = ee.ImageCollection('COPERNICUS/S2_SR_HARMONIZED')
+                .filterDate(year + '-11-01', year + '-12-31')
+                .filterBounds(aotea)
+                .filterMetadata('CLOUDY_PIXEL_PERCENTAGE', 'less_than', 50)
+                .map(maskS2clouds)
+                .median()
+                .clip(aotea);
+
+// Add the composite to the map
+Map.addLayer(S2, S2_vis, 'S2_' + year);
+}
