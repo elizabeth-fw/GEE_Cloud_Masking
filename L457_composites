@@ -212,5 +212,4 @@ Export.image.toDrive({
   fileFormat: 'GeoTIFF'
 });
   
-} // END OF ANNUAL 'FOR' LOOP_' + year);
-}
+} // END OF ANNUAL 'FOR' LOOP
