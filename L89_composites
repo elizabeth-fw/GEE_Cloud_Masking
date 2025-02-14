@@ -10,7 +10,9 @@ var aotea = ee.FeatureCollection('projects/aotealandslides/assets/aotea');
 
 function L89ScaleFactors(image) {
   var opticalBands = image.select('SR_B.').multiply(0.0000275).add(-0.2);
+  var thermalBands = image.select('ST_B.*').multiply(0.00341802).add(149.0);
   return image.addBands(opticalBands, null, true)
+              .addBands(thermalBands, null, true);
 }
 
 // #################################### VISUALIZATIONS ####################################
@@ -121,13 +123,10 @@ function CSmask(img) {
 
 // ------------------------- Buffer Cloud Score Mask Landsat 8-9 -------------------------
 
-// Apply a buffer and shadow masking to the advanced cloud masking
-function bufferCSmask(img) {
+// Apply a strong buffer and shadow mask to the cloud score masking
+function hbufferCSmask(img) {
   var cloudScore = calcCloudScore(img); // Calculate cloud score 
   var cloudMask = cloudScore.gt(maxCloudScore); // Create a cloud mask where score is greater than threshold
-  var distanceFromClouds = cloudMask.fastDistanceTransform(30); // Get distance from clouds
-  var bufferMask = distanceFromClouds.lte(50); // Create a buffer around clouds
-  var combinedMask = cloudMask.or(bufferMask);
   
   var nirDrkThresh = 0.3;
   var darkPixels = img.select('SR_B5').lt(nirDrkThresh).rename('dark_pixels');  // Detect dark pixels
@@ -146,15 +145,51 @@ function bufferCSmask(img) {
     // Map cloud shadow projection onto dark pixel areas
   var shadows = shadProj.multiply(darkPixels).rename('shadows');
   
-  var cloudshadMask = combinedMask.or(shadows);
+  var cloudshadMask = cloudMask.or(shadows);
   
-  var shadowMask = img.normalizedDifference(['SR_B5', 'SR_B6']).rename('shadowScore').lt(0.5);
-  return img.updateMask(cloudshadMask.not()).updateMask(shadowMask);
+  // Buffer Cloud and shadow Mask
+  var distanceFromMask = cloudshadMask.fastDistanceTransform(30); // Get distance from clouds
+  var bufferMask = distanceFromMask.lte(50); // Create a buffer around clouds
+  
+  //var shadowMask = img.normalizedDifference(['SR_B5', 'SR_B6']).rename('shadowScore').lt(0.5);
+  return img.updateMask(bufferMask.not())//.updateMask(shadowMask);
+}
+
+// Apply a low buffer and shadow mask to the advanced cloud masking
+function lbufferCSmask(img) {
+  var cloudScore = calcCloudScore(img); // Calculate cloud score 
+  var cloudMask = cloudScore.gt(maxCloudScore); // Create a cloud mask where score is greater than threshold
+  
+  var nirDrkThresh = 0.3;
+  var darkPixels = img.select('SR_B5').lt(nirDrkThresh).rename('dark_pixels');  // Detect dark pixels
+  
+  // Calculate shadow azimuth based on solar azimuth angle
+  var solarAzimuth = ee.Number(img.get('SUN_AZIMUTH'));
+  var shadowAzimuth = ee.Number(90).subtract(solarAzimuth);
+  
+  var shadProj = cloudMask
+    .directionalDistanceTransform(shadowAzimuth, 10)  // Project shadows
+    .reproject({crs: img.select(0).projection(), scale: 30})  // Set Landsat resolution
+    .select('distance')
+    .mask()
+    .rename('cloud_transform');
+    
+    // Map cloud shadow projection onto dark pixel areas
+  var shadows = shadProj.multiply(darkPixels).rename('shadows');
+  
+  var cloudshadMask = cloudMask.or(shadows);
+  
+  // Buffer Cloud and shadow Mask
+  var distanceFromMask = cloudshadMask.fastDistanceTransform(30); // Get distance from clouds
+  var bufferMask = distanceFromMask.lte(10); // Create a buffer around clouds
+  
+  //var shadowMask = img.normalizedDifference(['SR_B5', 'SR_B6']).rename('shadowScore').lt(0.5);
+  return img.updateMask(bufferMask.not()); //.updateMask(shadowMask)
 }
 
 // #################################### IMAGE COLLECTION & COMPOSITING ####################################
 
-for (var year = 2013; year <= 2023; year++) {
+for (var year = 2024; year <= 2024; year++) {
   var start = year + '-10-01';
   var end = (year + 1) + '-01-31';  // Include October to January of the following year
 
@@ -166,16 +201,16 @@ for (var year = 2013; year <= 2023; year++) {
                 .map(L89ScaleFactors);
 
   // Compute composites for each year with various levels of masking
-  var bufferQACScomp = L89.map(bufferQAmask).map(bufferCSmask).median().clip(aotea);
-  var QACScomp = L89.map(QAmask).map(CSmask).median().clip(aotea);
+  var bufferQACScomp = L89.map(bufferQAmask).map(hbufferCSmask).median().clip(aotea);
+  var QACScomp = L89.map(QAmask).map(lbufferCSmask).median().clip(aotea);
   var QAcomp = L89.map(QAmask).median().clip(aotea);
   var bufferQAcomp = L89.map(bufferQAmask).median().clip(aotea);
-  var CScomp = L89.map(CSmask).median().clip(aotea);
+  var CScomp = L89.map(lbufferCSmask).median().clip(aotea);
   var OGcomp = L89.median().clip(aotea);
 
  
 //   // Add layers to the map for each year (for visualization)
-  // Map.addLayer(OGcomp, L89_vis, 'L89_OG_' + year);
+//  Map.addLayer(OGcomp, L89_vis, 'L89_OG_' + year);
   // Map.addLayer(CScomp, L89_vis, 'L89_CS_' + year);
   // Map.addLayer(QAcomp, L89_vis, 'L89_QA_' + year);
   // Map.addLayer(QACScomp, L89_vis, 'L89_QACS_' + year);
@@ -185,15 +220,13 @@ for (var year = 2013; year <= 2023; year++) {
 
 // Create a mosaic by stacking the composites in an ImageCollection and applying the mosaic operation
   var mosaic = ee.ImageCollection([
-    OGcomp,
     CScomp,
     QAcomp,
     QACScomp,
-    bufferQACScomp,
-    bufferQAcomp,
+    bufferQACScomp
   ]).mosaic();
 
-  // Add the mosaic for the current year to the map
+// Add the mosaic for the current year to the map
   Map.addLayer(mosaic, L89_vis, 'L89_mosaic_' + year);
 
 // #################################### IMAGE EXPORT ####################################
