@@ -1,6 +1,6 @@
 // #################################### AOI ####################################
 
-var aotea = ee.FeatureCollection('projects/aotealandslides/assets/aotea');
+var aotea = ee.FeatureCollection('projects/aotealandslides/assets/aotea'); // THRESHOLD INPUT 
 
 //Map.addLayer(aotea, {color: 'red'}, 'aotea');
 // Map.centerObject(aotea, 11);
@@ -19,9 +19,9 @@ function applyL457ScaleFactors(image) {
 
 var L457_vis = {
   bands: ['SR_B3', 'SR_B2', 'SR_B1'],
-  min: 0.0,
-  max: 0.25,
-  gamma: 1.3
+  min: 0.0, // THRESHOLD INPUT (min reflectance)
+  max: 0.25, // THRESHOLD INPUT (max reflectance)
+  gamma: 1.3 // THRESHOLD INPUT (contrast adjustment)
 };
 
 // #################################### MASKING ####################################
@@ -61,8 +61,8 @@ function QAmask(image) {
 
 function bufferQAmask(image) {
   var QAmaskImg = QAmask(image).mask();
-  var distanceFromClouds = QAmaskImg.not().fastDistanceTransform(30);  // 30 meters distance
-  var bufferDistance = 20;  // Buffer distance threshold input - works best at 20 because of streak issue in L7
+  var distanceFromClouds = QAmaskImg.not().fastDistanceTransform(30);  // 30 meters distance THRESHOLD INPUT 
+  var bufferDistance = 20;  // Buffer distance threshold input - works best at 20 because of streak issue in L7 THRESHOLD INPUT 
   var bufferMask = distanceFromClouds.lte(bufferDistance);
   var combinedMask = QAmaskImg.and(bufferMask.not()); 
   return image.updateMask(combinedMask);
@@ -87,13 +87,13 @@ function rescale(imag, exp, thresholds) {
 // Function to manually compute cloud score
 function calcCloudScore(img) { 
   var score = ee.Image(1.0); 
-  score = score.min(rescale(img, 'blue', [0.05, 0.25]));  // Blue band threshold input [0.05, 0.3]
-  score = score.min(rescale(img, 'red + green + blue', [0.1, 0.8])); // Visible bands threshold input [0.1, 0.8]
-  score = score.min(rescale(img, 'nir + swir1 + swir1', [0.15, 0.8]));  // NIR + SWIR threshold input [0.15, 0.8]
+  score = score.min(rescale(img, 'blue', [0.05, 0.25]));  // Blue band THRESHOLD INPUT  [0.05, 0.3]
+  score = score.min(rescale(img, 'red + green + blue', [0.1, 0.8])); // Visible bands THRESHOLD INPUT [0.1, 0.8]
+  score = score.min(rescale(img, 'nir + swir1 + swir1', [0.15, 0.8]));  // NIR + SWIR THRESHOLD INPUT [0.15, 0.8]
   return score;
 }
 
-// CLOUD SCORE THRESHOLD
+// CLOUD SCORE THRESHOLD INPUT
 var maxCloudScore = 0.02;
 
 
@@ -103,7 +103,7 @@ function hCSmask(img) {
   var cloudMask = cloudScore.gt(maxCloudScore); // Create a cloud mask where score is greater than threshold
   
   // Set threshold for detecting possible shadow areas
-  var nirDrkThresh = 0.3;
+  var nirDrkThresh = 0.3; // THRESHOLD INPUT
   var darkPixels = img.select('SR_B4').lt(nirDrkThresh).rename('dark_pixels');  // Detect dark pixels
   
   // Calculate shadow azimuth based on solar azimuth angle
@@ -112,7 +112,7 @@ function hCSmask(img) {
   
   var shadProj = cloudMask
     .directionalDistanceTransform(shadowAzimuth, 10)  // Project shadows
-    .reproject({crs: img.select(0).projection(), scale: 30})  // Set Landsat resolution
+    .reproject({crs: img.select(0).projection(), scale: 30})  // Set Landsat resolution THRESHOLD INPUT
     .select('distance')
     .mask()
     .rename('cloud_transform');
@@ -165,16 +165,16 @@ function lCSmask(img) {
 
 // #################################### IMAGE COLLECTION & COMPOSITING ####################################
 
-for (var year = 1992; year <= 1992; year++) {
-  var start = year + '-10-01';
-  var end = (year + 1) + '-01-31';  // Include October to January of the following year
+for (var year = 1992; year <= 1992; year++) { // year loop THRESHOLD INPUT
+  var start = year + '-10-01'; // THRESHOLD INPUT
+  var end = (year + 1) + '-01-31';  // Include October to January of the following year THRESHOLD INPUT
 
-  var L457 = ee.ImageCollection('LANDSAT/LT04/C02/T1_L2')
-                .merge(ee.ImageCollection('LANDSAT/LT05/C02/T1_L2'))
-                .merge(ee.ImageCollection('LANDSAT/LE07/C02/T1_L2'))
+  var L457 = ee.ImageCollection('LANDSAT/LT04/C02/T1_L2') // THRESHOLD INPUT
+                .merge(ee.ImageCollection('LANDSAT/LT05/C02/T1_L2')) // THRESHOLD INPUT
+                .merge(ee.ImageCollection('LANDSAT/LE07/C02/T1_L2')) // THRESHOLD INPUT
                 .filterDate(start, end)
                 .filterBounds(aotea)
-                .filterMetadata('CLOUD_COVER', 'less_than', 80)
+                .filterMetadata('CLOUD_COVER', 'less_than', 80) // THRESHOLD INPUT
                 .map(applyL457ScaleFactors);
 
 // Compute composites for each year with various levels of masking
@@ -214,9 +214,9 @@ for (var year = 1992; year <= 1992; year++) {
 Export.image.toDrive({
   image: mosaic,
   description: 'L457_mosaic_' + year,  // Name of the file
-  scale: 30,  // Set the scale (resolution) in meters (30m for Landsat)
+  scale: 30,  // Set the scale (resolution) in meters (30m for Landsat) THRESHOLD INPUT
   region: aotea,  // Specify the region to export
-  maxPixels: 1e13,  // Increase max pixel count if needed
+  maxPixels: 1e13,  // Increase max pixel count if needed THRESHOLD INPUT
   fileFormat: 'GeoTIFF'
 });
   
