@@ -1,12 +1,17 @@
 // #################################### AOI ####################################
 
-var aotea = ee.FeatureCollection('projects/aotealandslides/assets/aotea'); // THRESHOLD INPUT 
+// Import AOI shapefile from assets
+var AOI = ee.FeatureCollection('projects/your_project_name/assets/your_asset_name'); // THRESHOLD INPUT 
 
-//Map.addLayer(aotea, {color: 'red'}, 'aotea');
-// Map.centerObject(aotea, 11);
+// Visualize AOI centered on the map
+Map.addLayer(AOI, {color: 'red'}, 'AOI');
+Map.centerObject(AOI, 11);
 
 
 // #################################### SCALING FACTORS ####################################
+
+// Apply optical and thermal scaling factors for Landsat 4, 5, and 7 surface reflectance imagery
+// Imagery scaling factors can be found on the Earth Engine Data Catalog
 
 function applyL457ScaleFactors(image) {
   var opticalBands = image.select('SR_B.').multiply(0.0000275).add(-0.2);
@@ -93,8 +98,8 @@ function calcCloudScore(img) {
   return score;
 }
 
-// CLOUD SCORE THRESHOLD INPUT
-var maxCloudScore = 0.02;
+// CLOUD SCORE
+var maxCloudScore = 0.02; //THRESHOLD INPUT
 
 
 // Apply a strong buffer and shadow mask to the cloud score masking
@@ -112,7 +117,7 @@ function hCSmask(img) {
   
   var shadProj = cloudMask
     .directionalDistanceTransform(shadowAzimuth, 10)  // Project shadows
-    .reproject({crs: img.select(0).projection(), scale: 30})  // Set Landsat resolution THRESHOLD INPUT
+    .reproject({crs: img.select(0).projection(), scale: 30})  // Scale is set to Landsat spatial resolution
     .select('distance')
     .mask()
     .rename('cloud_transform');
@@ -145,7 +150,7 @@ function lCSmask(img) {
   
   var shadProj = cloudMask
     .directionalDistanceTransform(shadowAzimuth, 10)  // Project shadows
-    .reproject({crs: img.select(0).projection(), scale: 30})  // Set Landsat resolution
+    .reproject({crs: img.select(0).projection(), scale: 30})  // Set Landsat spatial resolution
     .select('distance')
     .mask()
     .rename('cloud_transform');
@@ -165,20 +170,20 @@ function lCSmask(img) {
 
 // #################################### IMAGE COLLECTION & COMPOSITING ####################################
 
-for (var year = 1992; year <= 1992; year++) { // year loop THRESHOLD INPUT
+for (var year = 1992; year <= 1999; year++) { // year loop THRESHOLD INPUT
   var start = year + '-10-01'; // THRESHOLD INPUT
   var end = (year + 1) + '-01-31';  // Include October to January of the following year THRESHOLD INPUT
 
-  var L457 = ee.ImageCollection('LANDSAT/LT04/C02/T1_L2') // THRESHOLD INPUT
-                .merge(ee.ImageCollection('LANDSAT/LT05/C02/T1_L2')) // THRESHOLD INPUT
-                .merge(ee.ImageCollection('LANDSAT/LE07/C02/T1_L2')) // THRESHOLD INPUT
+  var L457 = ee.ImageCollection('LANDSAT/LT04/C02/T1_L2') // Landsat 4 Tier 1 Level 2 Surface Reflectance
+                .merge(ee.ImageCollection('LANDSAT/LT05/C02/T1_L2')) // Landsat 5 Tier 1 Level 2 Surface Reflectance
+                .merge(ee.ImageCollection('LANDSAT/LE07/C02/T1_L2')) // Landsat 7 Tier 1 Level 2 Surface Reflectance
                 .filterDate(start, end)
                 .filterBounds(aotea)
                 .filterMetadata('CLOUD_COVER', 'less_than', 80) // THRESHOLD INPUT
                 .map(applyL457ScaleFactors);
 
 // Compute composites for each year with various levels of masking
-  var bufferQACScomp = L457.map(bufferQAmask).map(hCSmask).median().clip(aotea);
+  var bufferQACScomp = L457.map(bufferQAmask).map(hCSmask).median().clip(AOI);
   var QACScomp = L457.map(QAmask).map(lCSmask).median().clip(aotea);
   var bufferQAcomp = L457.map(bufferQAmask).median().clip(aotea);
   var QAcomp = L457.map(QAmask).median().clip(aotea);
@@ -187,7 +192,7 @@ for (var year = 1992; year <= 1992; year++) { // year loop THRESHOLD INPUT
   var OGcomp = L457.median().clip(aotea);
 
  
-// Add layers to the map for each year (for visualization)
+// Add layers to the map for each year for visualization (optional - used to check cloud masking performance)
   //  Map.addLayer(OGcomp, L457_vis, 'L457_OG_' + year);
   // Map.addLayer(hCScomp, L457_vis, 'L457_hCS_' + year);
   // Map.addLayer(lCScomp, L457_vis, 'L457_lCS_' + year);
