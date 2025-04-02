@@ -1,13 +1,17 @@
 // #################################### AOI ####################################
 
-var aotea = ee.FeatureCollection('projects/aotealandslides/assets/aotea');
+// Import AOI shapefile from assets
+var AOI = ee.FeatureCollection('projects/your_project_name/assets/your_asset_name'); // THRESHOLD INPUT
 
-Map.addLayer(aotea, {color: 'red'}, 'aotea');
-
-Map.centerObject(aotea, 11);
+// Visualize AOI centered on the map
+Map.addLayer(AOI, {color: 'red'}, 'AOI');
+Map.centerObject(AOI, 11);
 
 
 // #################################### SCALING FACTORS ####################################
+
+// Apply optical and thermal scaling factors for Landsat 1, 2, and 3 surfae reflectance imagery
+// Imagery scaling factors can be found on the Earth Engine Data Catalog 
 
 // ------------------------ Landsat 1-3 scaling -------------------------
 
@@ -33,9 +37,9 @@ function maskL123clouds(image) {
 // ------------------------ Landsat 1-3 visualization-------------------------
 
 var L123_vis = {
-  bands: ['B4', 'B3', 'B2'],
-  min: 0.0,
-  max: 0.3,
+  bands: ['B4', 'B3', 'B2'], 
+  min: 0.0, // THRESHOLD INPUT (min reflectance)
+  max: 0.3, // THRESHOLD INPUT (max reflectance)
 };
 
 
@@ -43,20 +47,20 @@ var L123_vis = {
 
 // ------------------------- LANDSAT 1-3 COMPOSITE -------------------------
 
-for (var year = 1972; year <= 1982; year++) {
-  var start = year + '-10-01';
-  var end = (year + 1) + '-01-31';  // Include October to January of the following year
+for (var year = 1972; year <= 1982; year++) { // year loop THREHOLD INPUT
+  var start = year + '-10-01'; // THRESHOLD INPUT
+  var end = (year + 1) + '-01-31';  // Include October to January of the following year THRESHOLD INPUT
 
-  var L123 = ee.ImageCollection('LANDSAT/LM01/C02/T1')
-                .merge(ee.ImageCollection('LANDSAT/LM02/C02/T1'))
-                .merge(ee.ImageCollection('LANDSAT/LM03/C02/T1'))
+  var L123 = ee.ImageCollection('LANDSAT/LM01/C02/T1') // Landsat 1 Tier 1 Surface Reflectance
+                .merge(ee.ImageCollection('LANDSAT/LM02/C02/T1')) // Landsat 2 Tier 1 Surface Reflectance
+                .merge(ee.ImageCollection('LANDSAT/LM03/C02/T1')) // Landsat 3 Tier 1 Surface Reflectance
                 .filterDate(start, end)
-                .filterBounds(aotea)
+                .filterBounds(AOI)
                 .filterMetadata('CLOUD_COVER', 'less_than', 50)
                 .map(applyL123ScaleFactors)
                 .map(maskL123clouds)
                 .median()
-                .clip(aotea);
+                .clip(AOI);
 
   // Add the composite to the map
   Map.addLayer(L123, L123_vis, 'L123_' + year);
