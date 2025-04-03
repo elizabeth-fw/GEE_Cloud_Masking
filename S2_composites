@@ -1,13 +1,17 @@
 // ###################################################### Area of Interest (AOI) #####################################################
 
 // AOI Shapefile loaded into Google Earth Engine Project Assets
-var AOI = ee.FeatureCollection('projects/aotealandslides/assets/aotea'); // AOI THRESHOLD INPUT
+var AOI = ee.FeatureCollection('projects/your_project_name/assets/your_asset_name'); // AOI THRESHOLD INPUT
 
-//Map.addLayer (AOI, {color: 'red'}, 'aotea');
-//Map.centerObject(AOI, 11);
+// Visualize AOI centered on the map 
+Map.addLayer (AOI, {color: 'red'}, 'AOI');
+Map.centerObject(AOI, 11);
 
 
 // ###################################################### SCALING FACTORS #####################################################
+
+// Apply optical and thermal scaling factors for Sentinel 2 surface reflectance imagery
+// Imagery scaling factors can be found on the Earth Engine Data Catalog
 
 //--------------------------------------------- Sentinel 2 scaling -------------------------------------------------------------
 
@@ -21,8 +25,8 @@ function S2ScaleFactors(image) {
 
 //---------------------------------------------  Visible RGB  -------------------------------------------------------------
 var S2_vis = {
-  min: 0.0,
-  max: 0.15,
+  min: 0.0, // THRESHOLD INPUT (min reflectance)
+  max: 0.15, // THRESHOLD INPUT (max reflectance)
   bands: ['B4', 'B3', 'B2']
 };
 
@@ -30,8 +34,8 @@ var S2_vis = {
 // Visualizes the S2_CLOUD_PROBABILITY band (useful for mask quality assesment and debugging)
 // Clouds appear as white with a gradient to blue non-cloudy areas
 var S2_cloud = {
-  min: 0.0,
-  max: 100,
+  min: 0.0, // THRESHOLD INPUT
+  max: 100, // THRESHOLD INPUT
   palette: ['blue', 'white']
 };
 
@@ -53,8 +57,8 @@ function QAmask(image) {
 
 function bufferQAmask(image) {
   var QAmaskImg = QAmask(image).mask();
-  var distanceFromClouds = QAmaskImg.not().fastDistanceTransform(10);  // 10 meters distance for Sentinel
-  var bufferDistance = 20;  // Buffer distance threshold input
+  var distanceFromClouds = QAmaskImg.not().fastDistanceTransform(10);  // 10 meters distance for Sentinel THRESHOLD INPUT
+  var bufferDistance = 20;  // Buffer distance THRESHOLD INPUT
   var bufferMask = distanceFromClouds.lte(bufferDistance);
   var combinedMask = QAmaskImg.and(bufferMask.not()); 
   return image.updateMask(combinedMask);
@@ -88,8 +92,8 @@ function calcCloudScore(img) {
   return score;
 }
 
-// CLOUD SCORE THRESHOLD INPUT
-var maxCloudScore = 0.05;
+// CLOUD SCORE 
+var maxCloudScore = 0.05; // THRESHOLD INPUT
 
 // Define the cloud score masking function NO Buffer
 function CSmask(img) {
@@ -97,7 +101,7 @@ function CSmask(img) {
   var cloudScore = calcCloudScore(img);
   var cloudMask = cloudScore.gt(maxCloudScore);
   
-  var nirDrkThresh = 0.05;
+  var nirDrkThresh = 0.05; // THRESHOLD INPUT
   var darkPixels = img.select('B5').lt(nirDrkThresh).rename('dark_pixels');  // Detect dark pixels
   
   // Calculate shadow azimuth based on solar azimuth angle
@@ -106,7 +110,7 @@ function CSmask(img) {
   
 var shadProj = cloudMask
     .directionalDistanceTransform(shadowAzimuth, 60)  // Project shadows
-    .reproject({crs: img.select(0).projection(), scale: 10})  // Set Sentinel resolution
+    .reproject({crs: img.select(0).projection(), scale: 10})  // Scale is set to Sentinel resolution
     .select('distance')
     .mask()
     .rename('cloud_transform');
@@ -136,7 +140,7 @@ function bufferCSmask(img) {
   
   var shadProj = cloudMask
     .directionalDistanceTransform(shadowAzimuth, 30)  // Project shadows
-    .reproject({crs: img.select(0).projection(), scale: 10})  // Set Sentinel resolution
+    .reproject({crs: img.select(0).projection(), scale: 10})  // Scale is set to Sentinel resolution
     .select('distance')
     .mask()
     .rename('cloud_transform');
@@ -221,8 +225,8 @@ function addShadowBandsToImgCollection(image) {
   return ee.Image(image).addBands(ee.Image([darkPixels, cldProj, shadows]));
 }
 
-// CLOUD PROBABILITY BUFFER MASK DISTANCE THRESHOLD INPUT
-  var bufferProbDistance = 100; 
+// CLOUD PROBABILITY BUFFER MASK DISTANCE 
+  var bufferProbDistance = 100; // THRESHOLD INPUT
 // Function to add both cloud AND cloud shadow masks into a single band: 'cloudmask'
 function addCldShdwMaskToImgCollection(img) {
   var imgCloud = addCloudBandsToImgCollection(img);
@@ -265,7 +269,7 @@ function processCloudProbWithBufferNoShadow(S2Image) {
 var cloudCoverPercentThreshold = 80; // CLOUDY PIXEL PERCENTAGE THRESHOLD INPUT
 
 // ------------------------------------------------------  START OF ANNUAL 'FOR LOOP'  -------------------------------------------------------
-for (var year = 2018; year <= 2024; year++) {  // ANNUAL LOOP THRESHOLD INPUT
+for (var year = 2018; year <= 2024; year++) {  // year loop THRESHOLD INPUT
   var start = year + '-10-01';  // START DATE THRESHOLD INPUT
   var end = (year + 1) + '-01-31';  // END DATE THRESHOLD INPUT
 
@@ -346,9 +350,9 @@ var QACPCScomp = S2.map(QAmask).map(processCloudProbWithBufferNoShadow).map(CSma
 Export.image.toDrive({
   image: mosaic,
   description: 'S2_mosaic_' + year,  // Name of the file
-  scale: 10,  // Set the scale (resolution) in meters (10m for Sentinel-2)
+  scale: 10,  // Set the scale (resolution) in meters (10m for Sentinel-2) THRESHOLD INPUT
   region: AOI,  // Specify the region to export
-  maxPixels: 1e13,  // Increase max pixel count if needed
+  maxPixels: 1e13,  // Increase max pixel count if needed THRESHOLD INPUT
   fileFormat: 'GeoTIFF'
 });
  }
