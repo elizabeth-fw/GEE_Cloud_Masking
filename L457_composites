@@ -178,18 +178,18 @@ for (var year = 1992; year <= 1999; year++) { // year loop THRESHOLD INPUT
                 .merge(ee.ImageCollection('LANDSAT/LT05/C02/T1_L2')) // Landsat 5 Tier 1 Level 2 Surface Reflectance
                 .merge(ee.ImageCollection('LANDSAT/LE07/C02/T1_L2')) // Landsat 7 Tier 1 Level 2 Surface Reflectance
                 .filterDate(start, end)
-                .filterBounds(aotea)
+                .filterBounds(AOI)
                 .filterMetadata('CLOUD_COVER', 'less_than', 80) // THRESHOLD INPUT
                 .map(applyL457ScaleFactors);
 
 // Compute composites for each year with various levels of masking
   var bufferQACScomp = L457.map(bufferQAmask).map(hCSmask).median().clip(AOI);
-  var QACScomp = L457.map(QAmask).map(lCSmask).median().clip(aotea);
-  var bufferQAcomp = L457.map(bufferQAmask).median().clip(aotea);
-  var QAcomp = L457.map(QAmask).median().clip(aotea);
-  var hCScomp = L457.map(hCSmask).median().clip(aotea);
-  var lCScomp = L457.map(lCSmask).median().clip(aotea);
-  var OGcomp = L457.median().clip(aotea);
+  var QACScomp = L457.map(QAmask).map(lCSmask).median().clip(AOI);
+  var bufferQAcomp = L457.map(bufferQAmask).median().clip(AOI);
+  var QAcomp = L457.map(QAmask).median().clip(AOI);
+  var hCScomp = L457.map(hCSmask).median().clip(AOI);
+  var lCScomp = L457.map(lCSmask).median().clip(AOI);
+  var OGcomp = L457.median().clip(AOI);
 
  
 // Add layers to the map for each year for visualization (optional - used to check cloud masking performance)
@@ -220,7 +220,7 @@ Export.image.toDrive({
   image: mosaic,
   description: 'L457_mosaic_' + year,  // Name of the file
   scale: 30,  // Set the scale (resolution) in meters (30m for Landsat) THRESHOLD INPUT
-  region: aotea,  // Specify the region to export
+  region: AOI,  // Specify the region to export
   maxPixels: 1e13,  // Increase max pixel count if needed THRESHOLD INPUT
   fileFormat: 'GeoTIFF'
 });
