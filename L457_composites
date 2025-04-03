@@ -141,7 +141,7 @@ function lCSmask(img) {
   var cloudMask = cloudScore.gt(maxCloudScore); // Create a cloud mask where score is greater than threshold
   
   // Set threshold for detecting possible shadow areas
-  var nirDrkThresh = 0.3;
+  var nirDrkThresh = 0.3; // THRESHOLD INPUT
   var darkPixels = img.select('SR_B4').lt(nirDrkThresh).rename('dark_pixels');  // Detect dark pixels
   
   // Calculate shadow azimuth based on solar azimuth angle
