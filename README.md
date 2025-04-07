@@ -9,16 +9,16 @@ Scaling factors
   -	Imagery scaling factors can be found on the Earth Engine Data Catalog.
 Masking
   -	Landsat
-    o	Cloud masking based on the different QA bands. 
-      	Bit 1: Designated cloud
-      	Bit 2: Cirrus
-      	Bit 3: Cloud
-      	Bit 4: Cloud shadow
-    o	Filter out pixels flagged as cloudy, shadowed etc. and only keep clean pixels indicating no cloud.   
+    -	Cloud masking based on the different QA bands. 
+        -	Bit 1: Designated cloud
+        -	Bit 2: Cirrus
+        -	Bit 3: Cloud
+        -	Bit 4: Cloud shadow
+    - Filter out pixels flagged as cloudy, shadowed etc. and only keep clean pixels indicating no cloud.   
   -	Sentinel 2
-    o	This band is a bitmask band specifically for cloud and cirrus detection.
-      	Bit 10: Clouds
-      	Bit 11: Cirrus
+    - This band is a bitmask band specifically for cloud and cirrus detection.
+        -	Bit 10: Clouds
+        -	Bit 11: Cirrus
   -	Apply a buffer to get rid of the clouds surrounding the QA mask. 
   -	Manually compute cloud score. 
   -	Apply a strong buffer and shadow mask to the cloud score masking. 
