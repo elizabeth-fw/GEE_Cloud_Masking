@@ -67,7 +67,7 @@ function QAmask(image) {
 function bufferQAmask(image) {
   var QAmaskImg = QAmask(image).mask();
   var distanceFromClouds = QAmaskImg.not().fastDistanceTransform(30);  // 30 meters distance THRESHOLD INPUT 
-  var bufferDistance = 20;  // Buffer distance threshold input - works best at 20 because of streak issue in L7 THRESHOLD INPUT 
+  var bufferDistance = 20;  // Buffer distance - works best at 20 because of streak issue in L7 THRESHOLD INPUT 
   var bufferMask = distanceFromClouds.lte(bufferDistance);
   var combinedMask = QAmaskImg.and(bufferMask.not()); 
   return image.updateMask(combinedMask);
