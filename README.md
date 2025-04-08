@@ -1,12 +1,14 @@
 # GEE_compositing
 
-This script performs cloud masking on satellite images taken by Landsat or sentinel 2. It filters out and buffers pixels flagged as cloudy, shadowed or unclear while keeping the clean pixels which indicate no cloud. Then it builds a cloud-filtered, scaled image collection, compositing all the processed images together. 
+This script performs cloud masking on satellite images taken by Landsat or sentinel 2. It filters out and buffers pixels flagged as cloudy, shadowed or unclear while keeping the clean pixels indicating no cloud. It builds a cloud-filtered, scaled image collection, compositing all the processed images together before exporting them. 
 
 AOI
   -	Import AOI shapefile from assets.
+
 Scaling factors
   -	Apply optical and thermal scaling factors for surface reflectance imagery.
   -	Imagery scaling factors can be found on the Earth Engine Data Catalog.
+
 Masking
   -	Landsat
     -	Cloud masking based on the different QA bands. 
@@ -28,7 +30,8 @@ Masking
 
 For Sentinel 2 only:
 Buffer Cloud Probability Mask
-  -	Since the additional CLOUDY_PIXEL_PERCENTAGE filter, is not usable metadata in GEE's S2 Cloud Probability band (S2_CloudProb),      the two collections, S2_Harmonized and S2_CloudProb, must be manually aligned.
+  -	Since the additional CLOUDY_PIXEL_PERCENTAGE filter, is not usable metadata in GEE's S2 Cloud Probability band, the two 
+    collections, S2_Harmonized and S2_CloudProb, must be manually aligned.
   -	This 'matching' is done by filtering through the times that the S2_Harmonized images are taken to match them each with the time     that the corresponding derived 'Cloud Probability' image was produced.
   -	There is a small difference in time between when these two events (when the S2_Harmonized and the S2_CloudProb images are     
     produced) occur.
