@@ -281,15 +281,15 @@ var cloudProb_times = S2cloudProbFullCollection.aggregate_array('system:time_sta
 
 // Print the number of clearish images from end of each year taken
 var count1 = S2.size();
-print('# of images in AOI w/ less than ' + cloudCoverPercentThreshold + '% cloud from end of ' + year + ':', count1);
+print('# of images in AOI w/ less than ' + 50 + '% cloud from end of ' + year + ':', count1); //THRESHOLD INPUT (match cloudy pixel percentage threshold)
 
-// OPtional - Checking when Images were taken and Ensuring Correction Matching between S2_Harmonized and S2_cloudProb 
-// print(S2_times)
-// print(cloudProb_times)
-// var count2 = S2cloudProbFullCollection.size();
-// print('Total cloud prob images from end of ' + year + ':', count2);
-// var count3  = S2.map(processCloudProbWithBufferNoShadow).size();
-// print('# of cloud prob masked images from end of ' + year + ' (Should match):', count3);
+// Optional - Checking when Images were taken and Ensuring Correction Matching between S2_Harmonized and S2_cloudProb 
+  // print(S2_times)
+  // print(cloudProb_times)
+  // var count2 = S2cloudProbFullCollection.size();
+  // print('Total cloud prob images from end of ' + year + ':', count2);
+  // var count3  = S2.map(processCloudProbWithBufferNoShadow).size();
+  // print('# of cloud prob masked images from end of ' + year + ' (Should match):', count3);
 
 // ------------------------------------------------------------- Map Layers ------------------------------------------------------------------
 
