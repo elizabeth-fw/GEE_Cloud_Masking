@@ -24,19 +24,19 @@ Scripts are split by the satellite imagery that is processed. Note that Landsat 
 
 ### <ins> Masking </ins>	
 ### Landsat
-    - Basic QA Pixel Cloud Masking with optional buffer
-        -	Bits are used in the L457 and L89 scripts to remove pixels idenfied as clouds, cirrus, or shaddow
-    -	Custom Cloud Score Mask with optional buffer
-        -	Identify cloudy pixels for masking based on brightness in the blue band, all visible bands, and infrared bands
-        -	Detect dark pixels and identify possible shadow areas based on solar azimuth angle 
-    - *Note: At this time, the L123 Script only has basic QA Pixel Cloud Masking
+- Basic QA Pixel Cloud Masking with optional buffer
+    - Bits are used in the L457 and L89 scripts to remove pixels idenfied as clouds, cirrus, or shaddow
+- Custom Cloud Score Mask with optional buffer
+    -	Identify cloudy pixels for masking based on brightness in the blue band, all visible bands, and infrared bands
+    -	Detect dark pixels and identify possible shadow areas based on solar azimuth angle 
+- *Note: At this time, the L123 Script only has basic QA Pixel Cloud Masking
 ### Sentinel 2
   - Basic QA60 Cloud Mask with optional buffer
-        -	Bit 10: Clouds
-        -	Bit 11: Cirrus
+       -	Bit 10: Clouds
+       -	Bit 11: Cirrus
   -	Custom Cloud Score Mask with optional buffer
-        -	Identify cloudy pixels for masking based on brightness in the blue band, all visible bands, and infrared bands
-        -	Detect dark pixels and identify possible shadow areas based on solar azimuth angle 
+       -	Identify cloudy pixels for masking based on brightness in the blue band, all visible bands, and infrared bands
+       -	Detect dark pixels and identify possible shadow areas based on solar azimuth angle 
   -	Custom Cloud Probability Mask
 
 ### <ins> Buffer Cloud Probability Mask (_For Sentinel 2 only_) </ins>	
