@@ -1,11 +1,11 @@
 // #################################### AOI ####################################
 
 // Import AOI shapefile from assets
-var AOI = ee.FeatureCollection('projects/your_project_name/assets/your_asset_name'); // THRESHOLD INPUT 
+var AOI = ee.FeatureCollection('projects/your_project_name/assets/your_asset_name'); // THRESHOLD INPUT (specify AOI)
 
 // Visualize AOI centered on the map
 Map.addLayer(AOI, {color: 'red'}, 'AOI');
-Map.centerObject(AOI, 11);
+Map.centerObject(AOI, 11); // THRESHOLD INPUT (zoom)
 
 
 // #################################### SCALING FACTORS ####################################
@@ -66,8 +66,8 @@ function QAmask(image) {
 
 function bufferQAmask(image) {
   var QAmaskImg = QAmask(image).mask();
-  var distanceFromClouds = QAmaskImg.not().fastDistanceTransform(30);  // 30 meters distance THRESHOLD INPUT 
-  var bufferDistance = 20;  // Buffer distance - works best at 20 because of streak issue in L7 THRESHOLD INPUT 
+  var distanceFromClouds = QAmaskImg.not().fastDistanceTransform(30);
+  var bufferDistance = 20;  // THRESHOLD INPUT (Buffer distance - works best at 20 because of streak issue in L7)  
   var bufferMask = distanceFromClouds.lte(bufferDistance);
   var combinedMask = QAmaskImg.and(bufferMask.not()); 
   return image.updateMask(combinedMask);
@@ -92,9 +92,9 @@ function rescale(imag, exp, thresholds) {
 // Function to manually compute cloud score
 function calcCloudScore(img) { 
   var score = ee.Image(1.0); 
-  score = score.min(rescale(img, 'blue', [0.05, 0.25]));  // Blue band THRESHOLD INPUT  [0.05, 0.3]
-  score = score.min(rescale(img, 'red + green + blue', [0.1, 0.8])); // Visible bands THRESHOLD INPUT [0.1, 0.8]
-  score = score.min(rescale(img, 'nir + swir1 + swir1', [0.15, 0.8]));  // NIR + SWIR THRESHOLD INPUT [0.15, 0.8]
+  score = score.min(rescale(img, 'blue', [0.05, 0.25]));  // THRESHOLD INPUT (Blue)
+  score = score.min(rescale(img, 'red + green + blue', [0.1, 0.8])); // THRESHOLD INPUT (Visible)
+  score = score.min(rescale(img, 'nir + swir1 + swir1', [0.15, 0.8]));  // THRESHOLD INPUT (Infrared)
   return score;
 }
 
@@ -129,7 +129,7 @@ function hCSmask(img) {
   
   // Buffer Cloud and Shadow Mask
   var distanceFromClouds = cloudMask.fastDistanceTransform(30); // Get distance from clouds
-  var bufferMask = distanceFromClouds.lte(90); // Create a buffer around clouds
+  var bufferMask = distanceFromClouds.lte(90); // THRESHOLD INPUT (high buffer)
   
   //var shadowMask = img.normalizedDifference(['SR_B4', 'SR_B5']).rename('shadowScore').lt(0.5);
   return img.updateMask(bufferMask.not()) //.updateMask(shadowMask);
@@ -162,7 +162,7 @@ function lCSmask(img) {
   
   // Buffer Cloud and Shadow Mask
   var distanceFromClouds = cloudMask.fastDistanceTransform(30); // Get distance from clouds
-  var bufferMask = distanceFromClouds.lte(20); // Create a buffer around clouds
+  var bufferMask = distanceFromClouds.lte(20); // THRESHOLD INPUT (low buffer)
   
   //var shadowMask = img.normalizedDifference(['SR_B4', 'SR_B5']).rename('shadowScore').lt(0.5);
   return img.updateMask(bufferMask.not()); //.updateMask(shadowMask);
@@ -170,9 +170,9 @@ function lCSmask(img) {
 
 // #################################### IMAGE COLLECTION & COMPOSITING ####################################
 
-for (var year = 1992; year <= 1999; year++) { // year loop THRESHOLD INPUT
-  var start = year + '-10-01'; // THRESHOLD INPUT
-  var end = (year + 1) + '-01-31';  // Include October to January of the following year THRESHOLD INPUT
+for (var year = 1992; year <= 1999; year++) { // THRESHOLD INPUT (year loop)
+  var start = year + '-10-01'; // THRESHOLD INPUT (start month of interest)
+  var end = (year + 1) + '-01-31';  // THRESHOLD INPUT (end month of interest)
 
   var L457 = ee.ImageCollection('LANDSAT/LT04/C02/T1_L2') // Landsat 4 Tier 1 Level 2 Surface Reflectance
                 .merge(ee.ImageCollection('LANDSAT/LT05/C02/T1_L2')) // Landsat 5 Tier 1 Level 2 Surface Reflectance
