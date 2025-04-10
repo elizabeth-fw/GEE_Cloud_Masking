@@ -38,7 +38,7 @@ Scripts are split by the satellite imagery that is processed. Note that Landsat 
        -	Identify cloudy pixels for masking based on brightness in the blue band, all visible bands, and infrared bands
        -	Detect dark pixels and identify possible shadow areas based on solar azimuth angle 
   -	Custom Cloud Probability Mask
-       - Create a mask where cloud probability (from S2 metadata) is less than 20%
+       - Create a mask where cloud probability (from S2 metadata) is less than 15%
        -	*Note: Since the additional CLOUDY_PIXEL_PERCENTAGE filter is not usable metadata in GEE's S2 Cloud Probability band, the two collections (S2_Harmonized and S2_CloudProb) must be manually aligned. This 'matching' is done by filtering through the times that the S2_Harmonized images are taken to match them each with the time that the corresponding derived 'Cloud Probability' image was produced. There is a small difference in time between when these two events (when the S2_Harmonized and the S2_CloudProb images are produced) occur. Hence, the getCloudProbImage function below adds a buffer of an hour before and after the harmonized images were produced to match to then filter the could probability images.
 
 ### <ins> Image collection & compositing </ins>	
