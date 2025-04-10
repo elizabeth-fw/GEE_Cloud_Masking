@@ -219,7 +219,7 @@ for (var year = 1992; year <= 1999; year++) { // THRESHOLD INPUT (year loop)
 Export.image.toDrive({
   image: mosaic,
   description: 'L457_mosaic_' + year,  // Name of the file
-  scale: 30,  // Set the scale (resolution) in meters (30m for Landsat) THRESHOLD INPUT
+  scale: 30,  // Set the scale (resolution) in meters (30m for Landsat)
   region: AOI,  // Specify the region to export
   maxPixels: 1e13,  // Increase max pixel count if needed THRESHOLD INPUT
   fileFormat: 'GeoTIFF'
