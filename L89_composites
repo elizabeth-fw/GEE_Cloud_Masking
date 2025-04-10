@@ -1,16 +1,16 @@
 // #################################### AOI ####################################
 
 // Import AOI shapefile from assets
-var AOI = ee.FeatureCollection('projects/your_project_name/assets/your_asset_name'); // THRESHOLD INPUT 
+var AOI = ee.FeatureCollection('projects/your_project_name/assets/your_asset_name'); // THRESHOLD INPUT (specify AOI)
 
 // Visualize AOI centered on the map
 Map.addLayer(AOI, {color: 'red'}, 'AOI');
-Map.centerObject(AOI, 11);
+Map.centerObject(AOI, 11); // THRESHOLD INPUT (zoom)
 
 
 // #################################### SCALING FACTORS ####################################
 
-// Apply optical and thermal scaling factors for Landsat 8, and 9 surface reflectance imagery
+// Apply optical and thermal scaling factors for Landsat 8 and 9 surface reflectance imagery
 // Imagery scaling factors can be found on the Earth Engine Data Catalog
 
 function L89ScaleFactors(image) {
@@ -64,8 +64,8 @@ function QAmask(image) {
 
 function bufferQAmask(image) {
   var QAmaskImg = QAmask(image).mask();
-  var distanceFromClouds = QAmaskImg.not().fastDistanceTransform(30);  // 30 meters distance THRESHOLD INPUT
-  var bufferDistance = 50;  // Buffer distance THRESHOLD INPUT
+  var distanceFromClouds = QAmaskImg.not().fastDistanceTransform(30);
+  var bufferDistance = 50;  // THRESHOLD INPUT (buffer distance)
   var bufferMask = distanceFromClouds.lte(bufferDistance);
   var combinedMask = QAmaskImg.and(bufferMask.not()); 
   return image.updateMask(combinedMask);
@@ -90,16 +90,16 @@ function rescale(imag, exp, thresholds) {
 // Function to manually compute cloud score
 function calcCloudScore(img) { 
   var score = ee.Image(1.0); 
-  score = score.min(rescale(img, 'blue', [0.05, 0.3]));  // Blue band THRESHOLD INPUT [0.05, 0.3]
-  score = score.min(rescale(img, 'red + green + blue', [0.1, 0.8])); // Visible bands THRESHOLD INPUT [0.1, 0.8]
-  score = score.min(rescale(img, 'nir + swir1 + swir1', [0.15, 0.8]));  // NIR + SWIR THRESHOLD INPUT [0.15, 0.8]
+  score = score.min(rescale(img, 'blue', [0.05, 0.3]));  // THRESHOLD INPUT (blue)
+  score = score.min(rescale(img, 'red + green + blue', [0.1, 0.8])); // THRESHOLD INPUT (visible)
+  score = score.min(rescale(img, 'nir + swir1 + swir1', [0.15, 0.8]));  // THRESHOLD INPUT (Infrared)
   return score;
 }
 
 // CLOUD SCORE 
 var maxCloudScore = 0.05; // THRESHOLD INPUT
 
-// Apply a strong buffer and shadow mask to the cloud score masking
+// Apply a shadow mask to the cloud score masking
 function CSmask(img) {
   var cloudScore = calcCloudScore(img); // Calculate cloud score 
   var cloudMask = cloudScore.gt(maxCloudScore); // Create a cloud mask where score is greater than threshold
@@ -143,7 +143,7 @@ function hbufferCSmask(img) {
   
   var shadProj = cloudMask
     .directionalDistanceTransform(shadowAzimuth, 10)  // Project shadows
-    .reproject({crs: img.select(0).projection(), scale: 30})  // Set Landsat resolution
+    .reproject({crs: img.select(0).projection(), scale: 30})  // Landsat resolution
     .select('distance')
     .mask()
     .rename('cloud_transform');
@@ -155,7 +155,7 @@ function hbufferCSmask(img) {
   
   // Buffer Cloud and shadow Mask
   var distanceFromMask = cloudshadMask.fastDistanceTransform(30); // Get distance from clouds
-  var bufferMask = distanceFromMask.lte(50); // Create a buffer around clouds
+  var bufferMask = distanceFromMask.lte(50); // THRESHOLD INPUT (high buffer around clouds)
   
   //var shadowMask = img.normalizedDifference(['SR_B5', 'SR_B6']).rename('shadowScore').lt(0.5);
   return img.updateMask(bufferMask.not())//.updateMask(shadowMask);
@@ -175,7 +175,7 @@ function lbufferCSmask(img) {
   
   var shadProj = cloudMask
     .directionalDistanceTransform(shadowAzimuth, 10)  // Project shadows
-    .reproject({crs: img.select(0).projection(), scale: 30})  // Scale is set to Landsat spatial resolution
+    .reproject({crs: img.select(0).projection(), scale: 30})  // Landsat spatial resolution
     .select('distance')
     .mask()
     .rename('cloud_transform');
@@ -187,7 +187,7 @@ function lbufferCSmask(img) {
   
   // Buffer Cloud and shadow Mask
   var distanceFromMask = cloudshadMask.fastDistanceTransform(30); // Get distance from clouds
-  var bufferMask = distanceFromMask.lte(10); // Create a buffer around clouds
+  var bufferMask = distanceFromMask.lte(10); // THRESHOLD INPUT (low buffer around clouds)
   
   //var shadowMask = img.normalizedDifference(['SR_B5', 'SR_B6']).rename('shadowScore').lt(0.5);
   return img.updateMask(bufferMask.not()); //.updateMask(shadowMask)
@@ -195,15 +195,15 @@ function lbufferCSmask(img) {
 
 // #################################### IMAGE COLLECTION & COMPOSITING ####################################
 
-for (var year = 2013; year <= 2024; year++) { // year loop THRESHOLD INPUT
-  var start = year + '-10-01'; // THRESHOLD INPUT
-  var end = (year + 1) + '-01-31';  // Include October to January of the following year THRESHOLD INPUT
+for (var year = 2013; year <= 2024; year++) { // THRESHOLD INPUT (year loop)
+  var start = year + '-10-01'; // THRESHOLD INPUT (start month of interest)
+  var end = (year + 1) + '-01-31';  // THRESHOLD INPUT (end month of interest)
 
   var L89 = ee.ImageCollection('LANDSAT/LC08/C02/T1_L2') // Landsat 8 Tier 1 Level 2 Surface Reflectance
                 .merge(ee.ImageCollection('LANDSAT/LC09/C02/T1_L2')) // Landsat 9 Tier 1 Level 2 Surface Reflectance
                 .filterDate(start, end)
                 .filterBounds(AOI)
-                .filterMetadata('CLOUD_COVER', 'less_than', 50)
+                .filterMetadata('CLOUD_COVER', 'less_than', 50) //THRESHOLD INPUT
                 .map(L89ScaleFactors);
 
   // Compute composites for each year with various levels of masking
@@ -240,7 +240,7 @@ for (var year = 2013; year <= 2024; year++) { // year loop THRESHOLD INPUT
 Export.image.toDrive({
   image: mosaic,
   description: 'L89_mosaic_' + year,  // Name of the file
-  scale: 30,  // Set the scale (resolution) in meters (30m for Landsat) THRESHOLD INPUT
+  scale: 30,  // Set the scale (resolution) in meters (30m for Landsat)
   region: AOI,  // Specify the region to export
   maxPixels: 1e13,  // Increase max pixel count if needed THRESHOLD INPUT
   fileFormat: 'GeoTIFF'
