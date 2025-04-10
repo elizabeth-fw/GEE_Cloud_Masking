@@ -38,23 +38,19 @@ Scripts are split by the satellite imagery that is processed. Note that Landsat 
        -	Identify cloudy pixels for masking based on brightness in the blue band, all visible bands, and infrared bands
        -	Detect dark pixels and identify possible shadow areas based on solar azimuth angle 
   -	Custom Cloud Probability Mask
-
-### <ins> Buffer Cloud Probability Mask (_For Sentinel 2 only_) </ins>	
-  -	Since the additional CLOUDY_PIXEL_PERCENTAGE filter, is not usable metadata in GEE's S2 Cloud Probability band, the two collections, S2_Harmonized and S2_CloudProb, must be manually aligned.
-  -	This 'matching' is done by filtering through the times that the S2_Harmonized images are taken to match them each with the time that the corresponding derived 'Cloud Probability' image was produced.
-  -	There is a small difference in time between when these two events (when the S2_Harmonized and the S2_CloudProb images are produced) occur.
-  -	Hence, the getCloudProbImage function below adds a buffer of an hour before and after the harmonized images were produced to match to then filter the could probability images.
-  -	Function will be mapped to S2_Harmonized collection to create corresponding S2_CloudProb collection. 
-  -	Create a cloud probability mask (where cloud probability is less than 20%).
-  -	Apply the cloud probability mask to the Sentinel-2 image.
+       - Create a mask where cloud probability (from S2 metadata) is less than 20%
+       -	*Note: Since the additional CLOUDY_PIXEL_PERCENTAGE filter is not usable metadata in GEE's S2 Cloud Probability band, the two collections (S2_Harmonized and S2_CloudProb) must be manually aligned. This 'matching' is done by filtering through the times that the S2_Harmonized images are taken to match them each with the time that the corresponding derived 'Cloud Probability' image was produced. There is a small difference in time between when these two events (when the S2_Harmonized and the S2_CloudProb images are produced) occur. Hence, the getCloudProbImage function below adds a buffer of an hour before and after the harmonized images were produced to match to then filter the could probability images.
 
 ### <ins> Image collection & compositing </ins>	
-  -	Build a cloud-filtered, scaled image collection for a chosen time period. 
-  -	Compute composites for each year with various levels of masking. 
-  -	Add layers to the map for each year for visualization (optional – used to check cloud masking performance).
+  -	Collect all imagery for the AOI from specified datasets for a given time range (pre-set to 4-months of the Austral summer per year)
+  -	Build cloud-filtered median composites based on specified cloud masking combinations
+      - Various levels of masking are used in the mosaicking step to create a final image with as much usable surface reflectance data as possible
+  -	Optional - add layers to the map for each year for visualization (used to check cloud masking performance)
 
 ### <ins> Image mosaicking </ins>	
-  -	Create a mosaic by stacking the composites in an image collection and apply the mosaic operation. 
+  -	Create a mosaic by stacking the composites in an image collection
+  -	This allows for representing the best-performing cloud masked images first, while filling no_data regions in the AOI with lower-performing cloud masked images
+       -	This is done as better performing cloud masks can also mask useable areas with bright surface reflectance such as roads, beaches, and infrastructure
 
 ### <ins> Image export </ins>	
-  -	Specify the region to export and increase max pixel count if needed. 
+  -	Exports the final clipped mosaic for each year to Google Drive as a GeoTIFF
