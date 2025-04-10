@@ -10,7 +10,7 @@ Map.centerObject(AOI, 11); //THRESHOLD INPUT (zoom)
 
 // #################################### SCALING FACTORS ####################################
 
-// Apply optical and thermal scaling factors for Landsat 1, 2, and 3 surface reflectance imagery
+// Apply optical scaling factors for Landsat 1, 2, and 3 surface reflectance imagery
 // Imagery scaling factors can be found on the Earth Engine Data Catalog 
 
 function applyL123ScaleFactors(image) {
@@ -50,7 +50,7 @@ for (var year = 1972; year <= 1982; year++) { // THREHOLD INPUT (year loop)
                 .merge(ee.ImageCollection('LANDSAT/LM03/C02/T1')) // Landsat 3 Collection 2 Tier 1 Surface Reflectance
                 .filterDate(start, end)
                 .filterBounds(AOI)
-                .filterMetadata('CLOUD_COVER', 'less_than', 50)
+                .filterMetadata('CLOUD_COVER', 'less_than', 50) //THRESHOLD INPUT
                 .map(applyL123ScaleFactors)
                 .map(maskL123clouds)
                 .median()
