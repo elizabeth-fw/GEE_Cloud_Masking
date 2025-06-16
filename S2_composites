@@ -1,7 +1,7 @@
 // ###################################################### Area of Interest (AOI) #####################################################
 
 // AOI Shapefile loaded into Google Earth Engine Project Assets
-var AOI = ee.FeatureCollection('projects/your_project_name/assets/your_asset_name'); // THRESHOLD INPUT (specify AOI)
+var AOI = ee.FeatureCollection('projects/aotealandslides/assets/aotea'); // AOI THRESHOLD INPUT
 
 // Visualize AOI centered on the map 
 Map.addLayer (AOI, {color: 'red'}, 'AOI');
@@ -86,7 +86,7 @@ function calcCloudScore(img) {
   // Clouds are reasonably bright in all visible bands. 
   score = score.min(rescale(img, 'red + green + blue', [0.1, 0.8])); // THRESHOLD INPUT (visible)
   // Clouds are reasonably bright in all infrared bands. 
-  score = score.min(rescale(img, 'nir + swir1 + swir1', [0.15, 0.8]));  // THRESHOLD INPUT (infrared)
+  score = score.min(rescale(img, 'nir + swir1 + swir2', [0.15, 0.8]));  // THRESHOLD INPUT (infrared)
   return score;
 }
 
@@ -129,8 +129,8 @@ function bufferCSmask(img) {
   var cloudScore = calcCloudScore(img); // Calculate cloud score 
   var cloudMask = cloudScore.gt(maxCloudScore); // Create a cloud mask where score is greater than threshold
   
-  var nirDrkThresh = 0.05;
-  var darkPixels = img.select('B5').lt(nirDrkThresh).rename('dark_pixels');  // Detect dark pixels
+  var DrkThresh = 0.05;
+  var darkPixels = img.select('B5').lt(DrkThresh).rename('dark_pixels');  // Detect dark pixels from Red Edge
   
   // Calculate shadow azimuth based on solar azimuth angle
   var solarAzimuth = ee.Number(img.get('MEAN_SOLAR_AZIMUTH_ANGLE'));
@@ -307,18 +307,17 @@ var bufferQACPCScomp = S2.map(bufferQAmask).map(processCloudProbWithBufferNoShad
 var QACPCScomp = S2.map(QAmask).map(processCloudProbWithBufferNoShadow).map(CSmask).median().clip(AOI);
 
 // Add layers to the map for each year (optional - used to check cloud masking performance)
-  //Map.addLayer(QAcomp, S2_vis, 'S2_QA_' + year);
-  //Map.addLayer(bufferQAcomp, S2_vis, 'S2_bufferQA_' + year);
-  //Map.addLayer(CScomp, S2_vis, 'S2_CS_' + year);
-  //Map.addLayer(bufferCScomp, S2_vis, 'S2_bufferCS_' + year);
-  //Map.addLayer(QACScomp, S2_vis, 'S2_QACS_' + year);
-  //Map.addLayer(bufferQACScomp, S2_vis, 'S2_bufferQSCS_' + year);
-  //Map.addLayer(QAbufferCScomp, S2_vis, 'S2_QAbufferCS_' + year);
-  //Map.addLayer(CPcomp, S2_vis, 'S2_CP_' + year);
-  //Map.addLayer(bufferQACPCScomp, S2_vis, 'S2_bufferQACPCS_' + year);
-  //Map.addLayer(QACPCScomp, S2_vis, 'S2_QACPCS_' + year);
-  //Map.addLayer(bufferCPCScomp, S2_vis, 'S2_bufferCPCS_' + year);
-  
+  // Map.addLayer(QAcomp, S2_vis, 'S2_QA_' + year);
+  // Map.addLayer(bufferQAcomp, S2_vis, 'S2_bufferQA_' + year);
+  // Map.addLayer(CScomp, S2_vis, 'S2_CS_' + year);
+  // Map.addLayer(bufferCScomp, S2_vis, 'S2_bufferCS_' + year);
+  // Map.addLayer(QACScomp, S2_vis, 'S2_QACS_' + year);
+  // Map.addLayer(bufferQACScomp, S2_vis, 'S2_bufferQSCS_' + year);
+  // Map.addLayer(QAbufferCScomp, S2_vis, 'S2_QAbufferCS_' + year);
+  // Map.addLayer(CPcomp, S2_vis, 'S2_CP_' + year);
+  // Map.addLayer(bufferQACPCScomp, S2_vis, 'S2_bufferQACPCS_' + year);
+  // Map.addLayer(QACPCScomp, S2_vis, 'S2_QACPCS_' + year);
+
 
 // ###################################################### IMAGE MOSAICING #####################################################
 
